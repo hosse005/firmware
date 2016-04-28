@@ -223,9 +223,9 @@ static void Init_System_Reset_Info()
         {
             system_reset_info.reason = RESET_REASON_POWER_DOWN;
         }
-        else if (HAL_Core_System_Reset_FlagSet(BROWNOUT_RESET))
+        else if (HAL_Core_System_Reset_FlagSet(POWER_BROWNOUT_RESET))
         {
-            system_reset_info.reason = RESET_REASON_BROWNOUT;
+            system_reset_info.reason = RESET_REASON_POWER_BROWNOUT;
         }
         else if (HAL_Core_System_Reset_FlagSet(PIN_RESET)) // Pin reset flag should be checked in the last place
         {
@@ -313,9 +313,6 @@ void HAL_Core_Config(void)
                                       FLASH_INTERNAL, USER_FIRMWARE_IMAGE_LOCATION, FIRMWARE_IMAGE_SIZE,
                                       FACTORY_RESET_MODULE_FUNCTION, MODULE_VERIFY_CRC|MODULE_VERIFY_FUNCTION|MODULE_VERIFY_DESTINATION_IS_START_ADDRESS); //true to verify the CRC during copy also
 #endif
-
-    Init_System_Reset_Info();
-    RCC_ClearFlag(); // Ensure reset flags are cleared
 }
 
 #if !MODULAR_FIRMWARE
@@ -646,6 +643,10 @@ void application_start()
     HAL_Core_Setup();
 
     generate_key();
+
+    // Load last reset info from RCC / backup registers
+    Init_System_Reset_Info();
+    RCC_ClearFlag(); // Ensure reset flags are cleared
 
     app_setup_and_loop();
 }
@@ -1041,7 +1042,7 @@ bool HAL_Core_System_Reset_FlagSet(RESET_TypeDef resetType)
         return Is_System_Reset_Flag_Set(RCC_FLAG_LPWRRST);
     case POWER_DOWN_RESET:
         return Is_System_Reset_Flag_Set(RCC_FLAG_PORRST);
-    case BROWNOUT_RESET:
+    case POWER_BROWNOUT_RESET:
         return Is_System_Reset_Flag_Set(RCC_FLAG_BORRST);
     default:
         return false;

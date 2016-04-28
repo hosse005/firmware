@@ -169,9 +169,6 @@ void HAL_Core_Config(void)
 
 	sFLASH_Init();
 
-    Init_System_Reset_Info();
-    RCC_ClearFlag(); // Ensure reset flags are cleared
-
         module_user_init_hook();
 }
 
@@ -507,6 +504,11 @@ int main() {
     // the rtos systick can only be enabled after the system has been initialized
     systick_hook_enabled = true;
     HAL_Hook_Main();
+
+    // Load last reset info from RCC / backup registers
+    Init_System_Reset_Info();
+    RCC_ClearFlag(); // Ensure reset flags are cleared
+
     app_setup_and_loop();
     return 0;
 }

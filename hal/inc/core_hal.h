@@ -53,9 +53,11 @@ typedef enum
     WATCHDOG_RESET = 0x03,
     POWER_MANAGEMENT_RESET = 0x04,
     POWER_DOWN_RESET = 0x05,
-    BROWNOUT_RESET = 0x06
+    POWER_BROWNOUT_RESET = 0x06
 } RESET_TypeDef;
 
+// Reason codes are exposed under identifier names via the cloud - ensure this mapping is
+// updated for newly added reason codes
 typedef enum System_Reset_Reason
 {
     RESET_REASON_NONE = 0,
@@ -64,7 +66,7 @@ typedef enum System_Reset_Reason
     RESET_REASON_PIN_RESET = 20, // Reset from the NRST pin
     RESET_REASON_POWER_MANAGEMENT = 30, // Low-power management reset
     RESET_REASON_POWER_DOWN = 40, // Power-down reset
-    RESET_REASON_BROWNOUT = 50, // Brownout reset
+    RESET_REASON_POWER_BROWNOUT = 50, // Brownout reset
     RESET_REASON_WATCHDOG = 60, // Watchdog reset
     // Software
     RESET_REASON_UPDATE = 70, // Successful firmware update
