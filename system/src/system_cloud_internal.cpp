@@ -1003,9 +1003,91 @@ inline uint8_t spark_cloud_socket_closed()
     return closed;
 }
 
+static const char* resetReasonString(System_Reset_Reason reason)
+{
+    switch (reason) {
+    case RESET_REASON_UNKNOWN:
+        return "unknown";
+    case RESET_REASON_PIN_RESET:
+        return "pin_reset";
+    case RESET_REASON_POWER_MANAGEMENT:
+        return "power_management";
+    case RESET_REASON_POWER_DOWN:
+        return "power_down";
+    case RESET_REASON_POWER_BROWNOUT:
+        return "power_brownout";
+    case RESET_REASON_WATCHDOG:
+        return "watchdog";
+    case RESET_REASON_UPDATE:
+        return "update";
+    case RESET_REASON_UPDATE_ERROR:
+        return "update_error";
+    case RESET_REASON_UPDATE_TIMEOUT:
+        return "update_timeout";
+    case RESET_REASON_FACTORY_RESET:
+        return "factory_reset";
+    case RESET_REASON_SAFE_MODE:
+        return "safe_mode";
+    case RESET_REASON_DFU_MODE:
+        return "dfu_mode";
+    case RESET_REASON_PANIC:
+        return "panic";
+    case RESET_REASON_USER:
+        return "user";
+    default:
+        return nullptr;
+    }
+}
 
+static const char* panicCodeString(ePanicCode code)
+{
+    switch (code) {
+    case HardFault:
+        return "hard_fault";
+    case MemManage:
+        return "memory_fault";
+    case BusFault:
+        return "bus_fault";
+    case UsageFault:
+        return "usage_fault";
+    case OutOfHeap:
+        return "out_of_heap";
+    case AssertionFailure:
+        return "assertion";
+    case StackOverflow:
+        return "stack_overflow";
+    default:
+        return nullptr;
+    }
+}
 
-#else
+static void formatResetReasonEventData(int reason, uint32_t data, char *buf, size_t size)
+{
+    // Reset reason
+    int n = 0;
+    const char* s = resetReasonString((System_Reset_Reason)reason);
+    if (s) {
+        n = snprintf(buf, size, "%s", s);
+    } else {
+        n = snprintf(buf, size, "%d", (int)reason); // Print as numeric code
+    }
+    if (n < 0 || n >= (int)size) {
+        return;
+    }
+    buf += n;
+    size -= n;
+    // Additional data for selected reason codes
+    if (reason == RESET_REASON_PANIC) {
+        s = panicCodeString((ePanicCode)data);
+        if (s) {
+            n = snprintf(buf, size, ", %s", s);
+        } else {
+            n = snprintf(buf, size, ", %d", (int)data);
+        }
+    }
+}
+
+#else // SPARK_NO_CLOUD
 
 void HAL_NET_notify_socket_closed(sock_handle_t socket)
 {
@@ -1128,88 +1210,4 @@ void Spark_Sleep(void)
 void Spark_Wake(void)
 {
 	spark_protocol_command(sp, ProtocolCommands::WAKE);
-}
-
-static const char* resetReasonString(System_Reset_Reason reason)
-{
-    switch (reason) {
-    case RESET_REASON_UNKNOWN:
-        return "unknown";
-    case RESET_REASON_PIN_RESET:
-        return "pin_reset";
-    case RESET_REASON_POWER_MANAGEMENT:
-        return "power_management";
-    case RESET_REASON_POWER_DOWN:
-        return "power_down";
-    case RESET_REASON_POWER_BROWNOUT:
-        return "power_brownout";
-    case RESET_REASON_WATCHDOG:
-        return "watchdog";
-    case RESET_REASON_UPDATE:
-        return "update";
-    case RESET_REASON_UPDATE_ERROR:
-        return "update_error";
-    case RESET_REASON_UPDATE_TIMEOUT:
-        return "update_timeout";
-    case RESET_REASON_FACTORY_RESET:
-        return "factory_reset";
-    case RESET_REASON_SAFE_MODE:
-        return "safe_mode";
-    case RESET_REASON_DFU_MODE:
-        return "dfu_mode";
-    case RESET_REASON_PANIC:
-        return "panic";
-    case RESET_REASON_USER:
-        return "user";
-    default:
-        return nullptr;
-    }
-}
-
-static const char* panicCodeString(ePanicCode code)
-{
-    switch (code) {
-    case HardFault:
-        return "hard_fault";
-    case MemManage:
-        return "memory_management_fault";
-    case BusFault:
-        return "bus_fault";
-    case UsageFault:
-        return "usage_fault";
-    case OutOfHeap:
-        return "out_of_heap_memory";
-    case AssertionFailure:
-        return "assertion_failure";
-    case StackOverflow:
-        return "stack_overflow";
-    default:
-        return nullptr;
-    }
-}
-
-static void formatResetReasonEventData(int reason, uint32_t data, char *buf, size_t size)
-{
-    // Reset reason
-    int n = 0;
-    const char* s = resetReasonString((System_Reset_Reason)reason);
-    if (s) {
-        n = snprintf(buf, size, "%s", s);
-    } else {
-        n = snprintf(buf, size, "%d", (int)reason); // Print as numeric code
-    }
-    if (n < 0 || n >= (int)size) {
-        return;
-    }
-    buf += n;
-    size -= n;
-    // Additional data for selected reason codes
-    if (reason == RESET_REASON_PANIC) {
-        s = panicCodeString((ePanicCode)data);
-        if (s) {
-            n = snprintf(buf, size, ", %s", s);
-        } else {
-            n = snprintf(buf, size, ", %d", (int)data);
-        }
-    }
 }

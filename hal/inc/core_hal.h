@@ -56,7 +56,7 @@ typedef enum
     POWER_BROWNOUT_RESET = 0x06
 } RESET_TypeDef;
 
-// Reason codes are exposed under identifier names via the cloud - ensure this mapping is
+// Reason codes are exposed under identifier names via the cloud - ensure the mapping is
 // updated for newly added reason codes
 typedef enum System_Reset_Reason
 {
