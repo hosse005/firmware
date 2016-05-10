@@ -33,6 +33,15 @@ CFLAGS += $(addprefix -D,$(GLOBAL_DEFINES))
 export GLOBAL_DEFINES
 endif
 
+# fixes build errors on ubuntu with arm gcc 5.3.1
+# GNU_SOURCE is needed for isascii/toascii
+# WINSOCK_H stops select.h from being used which conflicts with CC3000 headers
+CFLAGS += -D_GNU_SOURCE -D_WINSOCK_H
+
+# Global category name for logging
+ifneq (,$(LOG_MODULE_CATEGORY))
+CFLAGS += -DLOG_MODULE_CATEGORY="\"$(LOG_MODULE_CATEGORY)\""
+endif
 
 # Collect all object and dep files
 ALLOBJ += $(addprefix $(BUILD_PATH)/, $(CSRC:.c=.o))
@@ -81,7 +90,7 @@ ifeq ("$(wildcard $(PARTICLE_SERIAL_DEV))","")
 	@echo Serial device PARTICLE_SERIAL_DEV : $(PARTICLE_SERIAL_DEV) not available
 else
 	@echo Entering dfu bootloader mode:
-	stty -f $(PARTICLE_SERIAL_DEV) $(START_DFU_FLASHER_SERIAL_SPEED)
+	$(SERIAL_SWITCHER) $(START_DFU_FLASHER_SERIAL_SPEED) $(PARTICLE_SERIAL_DEV)
 	sleep 1
 endif
 endif
@@ -103,7 +112,7 @@ ifeq ("$(wildcard $(PARTICLE_SERIAL_DEV))","")
 	@echo Serial device PARTICLE_SERIAL_DEV : $(PARTICLE_SERIAL_DEV) not available
 else
 	@echo Entering serial programmer mode:
-	stty -f $(PARTICLE_SERIAL_DEV) $(START_YMODEM_FLASHER_SERIAL_SPEED)
+	$(SERIAL_SWITCHER) $(START_YMODEM_FLASHER_SERIAL_SPEED) $(PARTICLE_SERIAL_DEV)
 	sleep 1
 	@echo Flashing using serial ymodem protocol:
 # Got some issue currently in getting 'sz' working

@@ -40,7 +40,7 @@ Download and install the latest version from: http://gnuwin32.sourceforge.net/pa
 #### 3. Device Firmware Upgrade Utilities
 Install dfu-util 0.8. Mac users can install dfu-util with [Homebrew](http://brew.sh/) `brew install dfu-util` or [Macports](http://www.macports.org), Linux users may find it in their package manager, and everyone can get it from http://dfu-util.gnumonks.org/index.html
 
-#### 4. Zatig
+#### 4. Zadig
 In order for the device to show up on the dfu list, you need to replace the USB driver with a utility called [Zadig](http://zadig.akeo.ie/). Here is a [tutorial](https://community.spark.io/t/tutorial-installing-dfu-driver-on-windows/3518) on using it. This is only required for Windows users.
 
 #### 5. Git
@@ -49,9 +49,11 @@ Download and install Git: http://git-scm.com/
 
 #### 6. Command line tools
 
-- crc32
+On Windows, you'll need to install MinGW and have it in your path to make available some of the typical *nix command line tools. 
+
+The tool `crc32` is also needed:
  - available in MinGW on Windows
  - available by default on OS X
- - linux users, please check with your package manager
+ - linux users, please check with your package manager. On debian based systems it can be installed via `sudo apt-get install libarchive-zip-perl`
 
 
