@@ -174,6 +174,10 @@ typedef struct Last_Reset_Info {
     uint32_t data;
 } Last_Reset_Info;
 
+typedef enum Feature_Flag {
+    FEATURE_FLAG_RESET_INFO = 0x01 // HAL_Feature::FEATURE_RESET_INFO
+} Feature_Flag;
+
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
@@ -245,6 +249,30 @@ static void Init_Last_Reset_Info()
         last_reset_info.data = 0; // Not used
     }
     // Note: RCC reset flags should be cleared, see HAL_Core_Init()
+}
+
+static int Write_Feature_Flag(uint32_t flag, bool value, bool *prev_value)
+{
+    uint32_t flags = *(uint32_t*)dct_read_app_data(DCT_FEATURE_FLAGS_OFFSET);
+    if (prev_value)
+    {
+        *prev_value = flags & flag;
+    }
+    if (value)
+    {
+        flags |= flag;
+    }
+    else
+    {
+        flags &= ~flag;
+    }
+    return dct_write_app_data(&flags, DCT_FEATURE_FLAGS_OFFSET, 4);
+}
+
+static bool Read_Feature_Flag(uint32_t flag)
+{
+    const uint32_t flags = *(uint32_t*)dct_read_app_data(DCT_FEATURE_FLAGS_OFFSET);
+    return flags & flag;
 }
 
 /* Extern variables ----------------------------------------------------------*/
@@ -1118,7 +1146,8 @@ int HAL_Feature_Set(HAL_Feature feature, bool enabled)
         }
         case FEATURE_RESET_INFO:
         {
-            return -1; // TODO
+            Write_Feature_Flag(FEATURE_FLAG_RESET_INFO, enabled, NULL);
+            return 0;
         }
 
     }
@@ -1151,7 +1180,7 @@ bool HAL_Feature_Get(HAL_Feature feature)
         }
         case FEATURE_RESET_INFO:
         {
-            return true; // TODO
+            return Read_Feature_Flag(FEATURE_FLAG_RESET_INFO);
         }
     }
     return false;
