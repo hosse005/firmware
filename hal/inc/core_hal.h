@@ -125,7 +125,7 @@ void HAL_Core_System_Reset(void);
 void HAL_Core_Factory_Reset(void);
 
 void HAL_Core_System_Reset_Ex(int reason, uint32_t data, void *reserved);
-int HAL_Core_Get_Reset_Reason(uint32_t *data, void *reserved);
+int HAL_Core_Get_Last_Reset_Info(int *reason, uint32_t *data, void *reserved);
 
 /**
  * Notification from hal to the external system.
@@ -223,6 +223,7 @@ typedef enum HAL_Feature {
     FEATURE_RETAINED_MEMORY=1,       // [write only] retained memory on backup power
     FEATURE_WARM_START,              // [read only] set to true if previous retained memory contents are available]
 	FEATURE_CLOUD_UDP,				// [read only] true if the UDP implementation should be used.
+    FEATURE_RESET_INFO               // [read/write] enables handling of last reset info (may affect backup registers)
 } HAL_Feature;
 
 int HAL_Feature_Set(HAL_Feature feature, bool enabled);

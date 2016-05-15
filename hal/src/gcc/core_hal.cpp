@@ -173,9 +173,9 @@ void HAL_Core_System_Reset_Ex(int reason, uint32_t data, void *reserved)
     HAL_Core_System_Reset();
 }
 
-int HAL_Core_Get_Reset_Reason(uint32_t *data, void *reserved)
+int HAL_Core_Get_Last_Reset_Info(int *reason, uint32_t *data, void *reserved)
 {
-    return RESET_REASON_NONE;
+    return -1;
 }
 
 void HAL_Core_Factory_Reset(void)

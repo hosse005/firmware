@@ -180,7 +180,7 @@ typedef struct Last_Reset_Info {
 
 /* Private variables ---------------------------------------------------------*/
 
-static Last_Reset_Info last_reset_info = { 0 };
+static Last_Reset_Info last_reset_info = { RESET_REASON_NONE, 0 };
 
 /* Private function prototypes -----------------------------------------------*/
 void (*HAL_TIM1_Handler)(void);
@@ -340,8 +340,11 @@ void HAL_Core_Setup(void) {
 }
 
 void HAL_Core_Init(void) {
-    // Clear RCC reset flags
-    RCC_ClearFlag();
+    if (HAL_Feature_Get(FEATURE_RESET_INFO))
+    {
+        // Clear RCC reset flags
+        RCC_ClearFlag();
+    }
 
     // Perform platform-specific initialization
     HAL_Core_Init_finalize();
@@ -421,19 +424,30 @@ void HAL_Core_Factory_Reset(void)
 
 void HAL_Core_System_Reset_Ex(int reason, uint32_t data, void *reserved)
 {
-    // Save reset info to backup registers
-    RTC_WriteBackupRegister(RTC_BKP_DR2, reason);
-    RTC_WriteBackupRegister(RTC_BKP_DR3, data);
+    if (HAL_Feature_Get(FEATURE_RESET_INFO))
+    {
+        // Save reset info to backup registers
+        RTC_WriteBackupRegister(RTC_BKP_DR2, reason);
+        RTC_WriteBackupRegister(RTC_BKP_DR3, data);
+    }
     HAL_Core_System_Reset();
 }
 
-int HAL_Core_Get_Reset_Reason(uint32_t *data, void *reserved)
+int HAL_Core_Get_Last_Reset_Info(int *reason, uint32_t *data, void *reserved)
 {
-    if (data)
+    if (HAL_Feature_Get(FEATURE_RESET_INFO))
     {
-        *data = last_reset_info.data;
+        if (reason)
+        {
+            *reason = last_reset_info.reason;
+        }
+        if (data)
+        {
+            *data = last_reset_info.data;
+        }
+        return 0;
     }
-    return last_reset_info.reason;
+    return -1;
 }
 
 void HAL_Core_Enter_Bootloader(bool persist)
@@ -657,8 +671,11 @@ void application_start()
 
     generate_key();
 
-    // Load last reset info from RCC / backup registers
-    Init_Last_Reset_Info();
+    if (HAL_Feature_Get(FEATURE_RESET_INFO))
+    {
+        // Load last reset info from RCC / backup registers
+        Init_Last_Reset_Info();
+    }
 
     app_setup_and_loop();
 }
@@ -1099,6 +1116,10 @@ int HAL_Feature_Set(HAL_Feature feature, bool enabled)
             }
             return 0;
         }
+        case FEATURE_RESET_INFO:
+        {
+            return -1; // TODO
+        }
 
     }
     return -1;
@@ -1127,6 +1148,10 @@ bool HAL_Feature_Get(HAL_Feature feature)
         		value = *data==0xFF;		// default is to use UDP
 #endif
         		return value;
+        }
+        case FEATURE_RESET_INFO:
+        {
+            return true; // TODO
         }
     }
     return false;
