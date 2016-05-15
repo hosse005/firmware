@@ -58,7 +58,7 @@ typedef struct __attribute__((packed)) application_dct {
     uint8_t device_public_key[384];     // sufficient for 2048 bits
     static_ip_config_t  ip_config;
     uint8_t unused[96];
-    uint32_t feature_flags[1];          // Configurable feature flags (see HAL_Feature_Set())
+    uint32_t feature_flags[1];          // Configurable feature flags (see HAL_Feature_Set()). Default uninitialized value is 0xffffffff
     uint8_t country_code[4];            // WICED country code. Stored as bit-endian format: CH1/CH2/0/rev (max 255)
     uint8_t claim_code[63];             // claim code. no terminating null.
     uint8_t claimed[1];                 // 0,0xFF, not claimed. 1 claimed.
