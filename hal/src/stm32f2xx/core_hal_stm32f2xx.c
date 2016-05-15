@@ -169,10 +169,10 @@ void UsageFault_Handler(void)
 
 /* Private typedef -----------------------------------------------------------*/
 
-typedef struct System_Reset_Info {
+typedef struct Last_Reset_Info {
     int reason;
     uint32_t data;
-} System_Reset_Info;
+} Last_Reset_Info;
 
 /* Private define ------------------------------------------------------------*/
 
@@ -180,7 +180,7 @@ typedef struct System_Reset_Info {
 
 /* Private variables ---------------------------------------------------------*/
 
-static System_Reset_Info system_reset_info = { 0 };
+static Last_Reset_Info last_reset_info = { 0 };
 
 /* Private function prototypes -----------------------------------------------*/
 void (*HAL_TIM1_Handler)(void);
@@ -201,45 +201,50 @@ void HAL_CAN2_SCE_Handler(void) __attribute__ ((weak));
 
 /* Private functions ---------------------------------------------------------*/
 
-static void Init_System_Reset_Info()
+static void Init_Last_Reset_Info()
 {
     if (HAL_Core_System_Reset_FlagSet(SOFTWARE_RESET))
     {
         // Load reset info from backup registers
-        system_reset_info.reason = RTC_ReadBackupRegister(RTC_BKP_DR2);
-        system_reset_info.data = RTC_ReadBackupRegister(RTC_BKP_DR3);
+        last_reset_info.reason = RTC_ReadBackupRegister(RTC_BKP_DR2);
+        last_reset_info.data = RTC_ReadBackupRegister(RTC_BKP_DR3);
+        // Clear backup registers
+        RTC_WriteBackupRegister(RTC_BKP_DR2, 0);
+        RTC_WriteBackupRegister(RTC_BKP_DR3, 0);
     }
     else // Hardware reset
     {
         if (HAL_Core_System_Reset_FlagSet(WATCHDOG_RESET))
         {
-            system_reset_info.reason = RESET_REASON_WATCHDOG;
+            last_reset_info.reason = RESET_REASON_WATCHDOG;
         }
         else if (HAL_Core_System_Reset_FlagSet(POWER_MANAGEMENT_RESET))
         {
-            system_reset_info.reason = RESET_REASON_POWER_MANAGEMENT;
+            last_reset_info.reason = RESET_REASON_POWER_MANAGEMENT; // Reset generated when entering standby mode (nRST_STDBY: 0)
         }
         else if (HAL_Core_System_Reset_FlagSet(POWER_DOWN_RESET))
         {
-            system_reset_info.reason = RESET_REASON_POWER_DOWN;
+            last_reset_info.reason = RESET_REASON_POWER_DOWN;
         }
         else if (HAL_Core_System_Reset_FlagSet(POWER_BROWNOUT_RESET))
         {
-            system_reset_info.reason = RESET_REASON_POWER_BROWNOUT;
+            last_reset_info.reason = RESET_REASON_POWER_BROWNOUT;
         }
         else if (HAL_Core_System_Reset_FlagSet(PIN_RESET)) // Pin reset flag should be checked in the last place
         {
-            system_reset_info.reason = RESET_REASON_PIN_RESET;
+            last_reset_info.reason = RESET_REASON_PIN_RESET;
+        }
+        else if (PWR_GetFlagStatus(PWR_FLAG_SB) != RESET) // Check if MCU was in standby mode
+        {
+            last_reset_info.reason = RESET_REASON_POWER_MANAGEMENT; // Reset generated when exiting standby mode (nRST_STDBY: 1)
         }
         else
         {
-            system_reset_info.reason = RESET_REASON_UNKNOWN;
+            last_reset_info.reason = RESET_REASON_UNKNOWN;
         }
-        system_reset_info.data = 0; // Not used
+        last_reset_info.data = 0; // Not used
     }
-    // Clear backup registers
-    RTC_WriteBackupRegister(RTC_BKP_DR2, 0);
-    RTC_WriteBackupRegister(RTC_BKP_DR3, 0);
+    // Note: RCC reset flags should be cleared, see HAL_Core_Init()
 }
 
 /* Extern variables ----------------------------------------------------------*/
@@ -334,6 +339,14 @@ void HAL_Core_Setup(void) {
 #endif
 }
 
+void HAL_Core_Init(void) {
+    // Clear RCC reset flags
+    RCC_ClearFlag();
+
+    // Perform platform-specific initialization
+    HAL_Core_Init_finalize();
+}
+
 #if MODULAR_FIRMWARE
 
 bool HAL_Core_Validate_User_Module(void)
@@ -414,13 +427,13 @@ void HAL_Core_System_Reset_Ex(int reason, uint32_t data, void *reserved)
     HAL_Core_System_Reset();
 }
 
-int HAL_Core_Get_System_Reset_Reason(uint32_t *data, void *reserved)
+int HAL_Core_Get_Reset_Reason(uint32_t *data, void *reserved)
 {
     if (data)
     {
-        *data = system_reset_info.data;
+        *data = last_reset_info.data;
     }
-    return system_reset_info.reason;
+    return last_reset_info.reason;
 }
 
 void HAL_Core_Enter_Bootloader(bool persist)
@@ -645,8 +658,7 @@ void application_start()
     generate_key();
 
     // Load last reset info from RCC / backup registers
-    Init_System_Reset_Info();
-    RCC_ClearFlag(); // Ensure reset flags are cleared
+    Init_Last_Reset_Info();
 
     app_setup_and_loop();
 }

@@ -581,7 +581,7 @@ int Spark_Handshake(bool presence_announce)
         }
 #endif
         uint32_t resetData = 0;
-        const int resetReason = HAL_Core_Get_System_Reset_Reason(&resetData, nullptr);
+        const int resetReason = HAL_Core_Get_Reset_Reason(&resetData, nullptr);
         if (resetReason != RESET_REASON_NONE)
         {
             char buf[64];
@@ -1053,7 +1053,7 @@ static const char* panicCodeString(ePanicCode code)
     case OutOfHeap:
         return "out_of_heap";
     case AssertionFailure:
-        return "assertion";
+        return "assert_failed";
     case StackOverflow:
         return "stack_overflow";
     default:

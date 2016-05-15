@@ -125,7 +125,7 @@ void HAL_Core_System_Reset(void);
 void HAL_Core_Factory_Reset(void);
 
 void HAL_Core_System_Reset_Ex(int reason, uint32_t data, void *reserved);
-int HAL_Core_Get_System_Reset_Reason(uint32_t *data, void *reserved);
+int HAL_Core_Get_Reset_Reason(uint32_t *data, void *reserved);
 
 /**
  * Notification from hal to the external system.

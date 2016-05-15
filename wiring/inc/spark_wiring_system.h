@@ -264,7 +264,7 @@ public:
 
     inline int resetReason()
     {
-        return HAL_Core_Get_System_Reset_Reason(nullptr, nullptr);
+        return HAL_Core_Get_Reset_Reason(nullptr, nullptr);
     }
 
 private:
