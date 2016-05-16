@@ -52,3 +52,6 @@ nbproject/
 build/target/
 build/cores/
 hal/soft-ap/.idea/
+
+# temp files
+*~
