@@ -55,3 +55,6 @@ hal/soft-ap/.idea/
 
 # temp files
 *~
+
+# ignore the html test file
+user/applications/garden-assist/test.html
