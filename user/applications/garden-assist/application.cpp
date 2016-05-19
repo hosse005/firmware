@@ -1,7 +1,7 @@
 #include "application.h"
 #include "SparkFunMAX17043.h"
 
-// Config
+// I/O mapping
 static int moisturePin = A0;
 static int powerPin = A5;
 
@@ -14,6 +14,9 @@ static MAX17043 liMon;
 
 // Sampling period (in ms)
 const int Ts = 1000;
+
+// Antenna configured
+String antenna;
 
 // Helper routines
 void sample();
@@ -29,10 +32,20 @@ void setup()
     Particle.variable("moisture", &moisture, INT);
     Particle.variable("vcell", &vcell, DOUBLE);
     Particle.variable("charge", &charge, DOUBLE);
+    Particle.variable("antenna", &antenna, STRING);
 
     // Initialize the battery monitor
     liMon.begin();
     liMon.quickStart();
+
+    // Try to use the external antenna first
+    if (!WiFi.selectAntenna(ANT_EXTERNAL))
+	antenna = "u.FL";
+    else
+    {
+	WiFi.selectAntenna(ANT_INTERNAL);
+	antenna = "chip";
+    }
 }
 
 void loop()
