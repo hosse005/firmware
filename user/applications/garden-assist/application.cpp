@@ -12,15 +12,20 @@ static int moisture;
 static double vcell, charge;
 static MAX17043 liMon;
 
-// Sampling period (in ms)
-const int Ts = 1000;
+// Sampling period (in seconds)
+static const int Ts = 10;
 
-// Antenna configured
-String antenna;
+// Antenna configuration
+static String antenna;
 
 // Helper routines
-void sample();
-void updateBatteryStats();
+static void sample();
+static void updateBatteryStats();
+static void sync();
+
+// Cloud access routine
+static int cloudCtl(String command);
+static bool cloudSync = true;
 
 void setup()
 {
@@ -33,6 +38,9 @@ void setup()
     Particle.variable("vcell", &vcell, DOUBLE);
     Particle.variable("charge", &charge, DOUBLE);
     Particle.variable("antenna", &antenna, STRING);
+
+    // Declare particle function for cloud invocation
+    Particle.function("cloudHook", cloudCtl);
 
     // Initialize the battery monitor
     liMon.begin();
@@ -56,11 +64,13 @@ void loop()
     // Collect battery stats
     updateBatteryStats();
 
-    // Delay for polling interval - TODO: go into sleep mode
-    delay(Ts);
+    // TODO - publish new data event to server
+
+    // Synchronize with server and then sleep
+    sync();
 }
 
-void sample()
+static void sample()
 {
     digitalWrite(powerPin, HIGH);        // Turn on the sensor supply
     delay(200);                          // Give supply time to come up
@@ -68,8 +78,33 @@ void sample()
     digitalWrite(powerPin, LOW);         // Turn the sensor supply back off
 }
 
-void updateBatteryStats()
+static void updateBatteryStats()
 {
     vcell = liMon.getVoltage();
     charge = liMon.getSOC();
+}
+
+static int cloudCtl(String command)
+{
+    int result = -1;
+
+    /* Commands:
+       sync - server to invoke after fetching sensor data
+    */
+    if (command == "sync")
+    {
+	cloudSync = true;
+	result = 0;
+    }
+
+    return result;
+}
+
+static void sync()
+{
+    cloudSync = false;
+
+    // Spin until we receive synchronization from the server - then sleep
+    while(!cloudSync) { delay(1000); }
+    System.sleep(SLEEP_MODE_DEEP, Ts);
 }
