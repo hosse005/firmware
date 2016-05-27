@@ -1,6 +1,7 @@
 #include "application.h"
 #include "SparkFunMAX17043.h"
 
+
 // I/O mapping
 static int moisturePin = A0;
 static int powerPin = A5;
@@ -21,6 +22,7 @@ static String antenna;
 // Helper routines
 static void sample();
 static void updateBatteryStats();
+static void publish();
 static void sync();
 
 // Cloud access routine
@@ -64,7 +66,8 @@ void loop()
     // Collect battery stats
     updateBatteryStats();
 
-    // TODO - publish new data event to server
+    // Publish new data event to server
+    publish();
 
     // Synchronize with server and then sleep
     sync();
@@ -82,6 +85,21 @@ static void updateBatteryStats()
 {
     vcell = liMon.getVoltage();
     charge = liMon.getSOC();
+}
+
+static void publish()
+{
+    // Publish our particle variables
+    char res[4];
+
+    sprintf(res, "%d", moisture);
+    Particle.publish("moisture", res);
+
+    sprintf(res, "%1.2f", vcell);
+    Particle.publish("vcell", res);
+
+    sprintf(res, "%2.1f", charge);
+    Particle.publish("charge", res);
 }
 
 static int cloudCtl(String command)
