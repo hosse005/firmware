@@ -23,11 +23,7 @@ static String antenna;
 static void sample();
 static void updateBatteryStats();
 static void publish();
-static void sync();
 
-// Cloud access routine
-static int cloudCtl(String command);
-static bool cloudSync = true;
 
 void setup()
 {
@@ -40,9 +36,6 @@ void setup()
     Particle.variable("vcell", &vcell, DOUBLE);
     Particle.variable("charge", &charge, DOUBLE);
     Particle.variable("antenna", &antenna, STRING);
-
-    // Declare particle function for cloud invocation
-    Particle.function("cloudHook", cloudCtl);
 
     // Initialize the battery monitor
     liMon.begin();
@@ -69,8 +62,8 @@ void loop()
     // Publish new data event to server
     publish();
 
-    // Synchronize with server and then sleep
-    sync();
+    // Sleep for specified sampling interval
+    System.sleep(SLEEP_MODE_DEEP, Ts);
 }
 
 static void sample()
@@ -95,34 +88,13 @@ static void publish()
     sprintf(res, "%d", moisture);
     Particle.publish("moisture", res);
 
+    sprintf(res, "%2.1f", charge);
+    Particle.publish("charge", res);
+
     sprintf(res, "%1.2f", vcell);
     Particle.publish("vcell", res);
 
-    sprintf(res, "%2.1f", charge);
-    Particle.publish("charge", res);
-}
+    // Give hw time to complete upload
+    delay(3000);
 
-static int cloudCtl(String command)
-{
-    int result = -1;
-
-    /* Commands:
-       sync - server to invoke after fetching sensor data
-    */
-    if (command == "sync")
-    {
-	cloudSync = true;
-	result = 0;
-    }
-
-    return result;
-}
-
-static void sync()
-{
-    cloudSync = false;
-
-    // Spin until we receive synchronization from the server - then sleep
-    while(!cloudSync) { delay(1000); }
-    System.sleep(SLEEP_MODE_DEEP, Ts);
 }
